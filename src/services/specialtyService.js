@@ -51,24 +51,58 @@ let getAllSpecialty = () => {
     }
   });
 };
-let getDetailSpecialtyById = (inputId) => {
+let getDetailSpecialtyById = (inputId, location) => {
   return new Promise(async (resolve, reject) => {
     try {
-      if (!inputId) {
+      if (!inputId || !location) {
         resolve({
           errCode: 1,
           errMessage: "Missing parameter",
         });
       } else {
-        let data = await db.Specialty.findOne({
-          where: {
-            id: inputId,
-          },
-          attributes: ["descriptionHTML", "descriptionMarkdown"],
-        });
-        if (data) {
-          //do something
-        } else data = {};
+        console.log(inputId, location);
+        let data = {};
+        if (location === "ALL") {
+          data = await db.Specialty.findOne({
+            where: {
+              id: inputId,
+            },
+
+            attributes: ["descriptionHTML", "descriptionMarkdown"],
+            include: [
+              {
+                model: db.Doctor_Infor,
+                as: "doctorSpecialty",
+                where: {
+                  specialtyId: inputId,
+                },
+                attributes: ["doctorId", "provinceId"],
+              },
+            ],
+          });
+        } else {
+          data = await db.Specialty.findOne({
+            where: {
+              id: inputId,
+            },
+
+            attributes: ["descriptionHTML", "descriptionMarkdown"],
+            include: [
+              {
+                model: db.Doctor_Infor,
+                as: "doctorSpecialty",
+                required: false,
+                where: {
+                  specialtyId: inputId,
+                  provinceId: location,
+                },
+                attributes: ["doctorId", "provinceId"],
+              },
+            ],
+          });
+        }
+
+        // console.log("Duc data", data);
         resolve({
           errMessage: "ok",
           errCode: 0,
